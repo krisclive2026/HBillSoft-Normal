@@ -1,3 +1,19 @@
+open empty folder in vscode
+
+
+
+open terminal
+
+
+Run git clone https://github.com/krisclive2026/HBillSoft-Normal.git
+
+
+
+
+Run test12.py
+
+
+
 On first launch, Activate the license using Key-generator
 
 
