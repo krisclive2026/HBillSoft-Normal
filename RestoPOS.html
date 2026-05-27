@@ -591,7 +591,7 @@
         .main-container {
             display: grid;
             grid-template-columns: 200px minmax(0, 1fr) 360px;
-            height: calc(100vh - 96px);
+            height: calc(100vh - 166px);
             overflow: hidden;
         }
 
@@ -615,6 +615,178 @@
         .app-footer strong {
             color: var(--accent);
             font-weight: 600;
+        }
+
+        .global-action-bar {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.65rem 1.25rem;
+            background: var(--bg-secondary);
+            border-top: 2px solid var(--border);
+            border-bottom: 1px solid var(--border);
+            flex-shrink: 0;
+            z-index: 50;
+            box-shadow: 0 -2px 12px rgba(0,0,0,0.15);
+        }
+
+        .global-action-bar .kot-btn {
+            min-width: 120px;
+        }
+
+        .global-action-bar .checkout-btn {
+            flex: 1;
+            max-width: 320px;
+        }
+
+        .new-order-btn {
+            padding: 0.45rem 0.85rem;
+            border-radius: var(--radius-sm);
+            border: 2px solid var(--success, #22c55e);
+            background: transparent;
+            color: var(--success, #22c55e);
+            font-size: 0.82rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: var(--transition);
+            white-space: nowrap;
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+
+        .new-order-btn:hover {
+            background: rgba(34,197,94,0.12);
+        }
+
+        .open-orders-btn {
+            padding: 0.45rem 0.85rem;
+            border-radius: var(--radius-sm);
+            border: 2px solid var(--accent);
+            background: transparent;
+            color: var(--accent);
+            font-size: 0.82rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: var(--transition);
+            white-space: nowrap;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            position: relative;
+        }
+
+        .open-orders-btn:hover {
+            background: var(--accent-light);
+        }
+
+        .open-orders-badge {
+            background: var(--accent);
+            color: #fff;
+            border-radius: 10px;
+            padding: 1px 7px;
+            font-size: 0.72rem;
+            font-weight: 800;
+        }
+
+        /* ===== OPEN ORDERS PANEL ===== */
+        .open-orders-panel {
+            position: fixed;
+            bottom: 110px;
+            left: 1.25rem;
+            width: 340px;
+            max-height: 420px;
+            background: var(--bg-secondary);
+            border: 1.5px solid var(--border);
+            border-radius: var(--radius);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.35);
+            z-index: 200;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .open-orders-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.7rem 1rem;
+            border-bottom: 1px solid var(--border);
+            font-weight: 700;
+            font-size: 0.88rem;
+            background: var(--bg-tertiary);
+            flex-shrink: 0;
+        }
+
+        .open-orders-list {
+            overflow-y: auto;
+            flex: 1;
+            padding: 0.4rem 0;
+        }
+
+        .open-order-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.6rem 1rem;
+            border-bottom: 1px solid var(--border);
+            cursor: pointer;
+            transition: var(--transition);
+            gap: 0.5rem;
+        }
+
+        .open-order-item:last-child { border-bottom: none; }
+
+        .open-order-item:hover { background: var(--bg-card); }
+
+        .open-order-info { flex: 1; min-width: 0; }
+
+        .open-order-name {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .open-order-meta {
+            font-size: 0.74rem;
+            color: var(--text-secondary);
+            margin-top: 2px;
+        }
+
+        .open-order-resume {
+            padding: 0.3rem 0.7rem;
+            border-radius: 6px;
+            border: 1.5px solid var(--accent);
+            background: transparent;
+            color: var(--accent);
+            font-size: 0.75rem;
+            font-weight: 700;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: var(--transition);
+        }
+
+        .open-order-resume:hover { background: var(--accent-light); }
+
+        .open-order-delete {
+            padding: 0.3rem 0.5rem;
+            border-radius: 6px;
+            border: 1.5px solid rgba(255,51,102,0.35);
+            background: transparent;
+            color: var(--danger);
+            font-size: 0.75rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .open-order-delete:hover { background: rgba(255,51,102,0.1); }
+
+        .open-orders-empty {
+            text-align: center;
+            padding: 2rem 1rem;
+            color: var(--text-secondary);
+            font-size: 0.85rem;
         }
 
         /* ===== CATEGORIES SIDEBAR ===== */
@@ -1149,6 +1321,7 @@
             padding: 0.5rem 0.75rem;
             border-top: 1px solid var(--border);
             background: var(--bg-tertiary);
+            flex-shrink: 0;
         }
 
         .bill-summary {
@@ -2456,22 +2629,19 @@
                     <!-- Hidden token — set by table grid selection or manually -->
                     <input type="hidden" id="token-number-input" value="">
                     <div class="bill-summary">
-                        <div class="bill-row">
-                            <span>Subtotal</span>
-                            <span id="subtotal">₹0.00</span>
-                        </div>
-                        <div class="bill-row hidden" id="gst-row">
-                            <span>GST incl. (<span id="gst-rate">5</span>%)</span>
-                            <span id="gst-amount">₹0.00</span>
-                        </div>
-                        <div class="bill-row hidden" id="sgst-row">
-                            <span>SGST incl. (<span id="sgst-rate">2.5</span>%)</span>
-                            <span id="sgst-amount">₹0.00</span>
-                        </div>
-                        <div class="bill-row hidden" id="cgst-row">
-                            <span>CGST incl. (<span id="cgst-rate">2.5</span>%)</span>
-                            <span id="cgst-amount">₹0.00</span>
-                        </div>
+                        <!-- GST/discount detail rows hidden here — shown only in receipt preview -->
+                        <span id="subtotal" style="display:none"></span>
+                        <span id="gst-amount" style="display:none"></span>
+                        <span id="gst-rate" style="display:none"></span>
+                        <span id="sgst-amount" style="display:none"></span>
+                        <span id="sgst-rate" style="display:none"></span>
+                        <span id="cgst-amount" style="display:none"></span>
+                        <span id="cgst-rate" style="display:none"></span>
+                        <span id="discount-amount" style="display:none"></span>
+                        <div id="gst-row" style="display:none"></div>
+                        <div id="sgst-row" style="display:none"></div>
+                        <div id="cgst-row" style="display:none"></div>
+                        <div id="discount-row" style="display:none"></div>
                         <div class="common-discount-row">
                             <label>Discount %</label>
                             <input type="number" class="common-discount-input" id="cart-discount-input"
@@ -2480,25 +2650,36 @@
                                 oninput="setCartDiscount(this.value)"
                                 onchange="setCartDiscount(this.value)">
                         </div>
-                        <div class="bill-row discount-row hidden" id="discount-row">
-                            <span>Discount</span>
-                            <span id="discount-amount">-₹0.00</span>
-                        </div>
                         <div class="bill-row grand-total">
                             <span>Grand Total</span>
                             <span id="grand-total">₹0.00</span>
                         </div>
                     </div>
-                    <!-- KOT + Confirm row -->
-                    <div class="cart-action-row">
-                        <button class="kot-btn" id="kot-btn" onclick="printKOT()">🖨️ KOT</button>
-                    </div>
-                    <button class="checkout-btn" id="checkout-btn">
-                        <span>Confirm</span>
-                        <span id="checkout-count">0 items</span>
-                    </button>
+
                 </div>
             </aside>
+        </div>
+
+        <!-- ===== GLOBAL ACTION BAR ===== -->
+        <div class="global-action-bar" id="global-action-bar">
+            <button class="new-order-btn" id="new-order-btn" onclick="startNewOrder()" title="Save current order and start a new one">➕ New Order</button>
+            <button class="open-orders-btn" id="open-orders-btn" onclick="toggleOpenOrdersPanel()" title="View and resume pending orders">
+                📋 Open Orders <span class="open-orders-badge" id="open-orders-badge" style="display:none">0</span>
+            </button>
+            <button class="kot-btn" id="kot-btn" onclick="printKOT()">🖨️ KOT</button>
+            <button class="checkout-btn" id="checkout-btn">
+                <span>Confirm</span>
+                <span id="checkout-count">0 items</span>
+            </button>
+        </div>
+
+        <!-- ===== OPEN ORDERS PANEL ===== -->
+        <div class="open-orders-panel" id="open-orders-panel" style="display:none">
+            <div class="open-orders-header">
+                <span>📋 Pending Orders</span>
+                <button onclick="toggleOpenOrdersPanel()" style="background:none;border:none;color:var(--text-secondary);font-size:1.2rem;cursor:pointer">×</button>
+            </div>
+            <div class="open-orders-list" id="open-orders-list"></div>
         </div>
 
         <!-- ===== MENU MANAGER PAGE ===== -->
@@ -2885,6 +3066,7 @@
         let cart = [];
         let settings = {};
         let orders = [];
+        let pendingOrders = [];           // saved pending orders: { id, label, cart, discount, orderType, table, savedAt }
         let currentCategory = "all";
         let selectedItemId = null;
         let cartDiscount = 0;
@@ -3397,6 +3579,141 @@
             showNotification("Cart cleared", "info");
         }
 
+        function startNewOrder() {
+            if (cart.length === 0) {
+                showNotification("Cart is empty — nothing to save", "info");
+                return;
+            }
+            const curr = settings.currency || "₹";
+            const total = cart.reduce((s, i) => s + i.price * i.qty, 0);
+            const label = selectedTable
+                ? `Table ${selectedTable}`
+                : `Order #${pendingOrders.length + 1}`;
+            const pending = {
+                id: Date.now(),
+                label,
+                cart: JSON.parse(JSON.stringify(cart)),
+                discount: cartDiscount,
+                orderType: currentOrderType,
+                table: selectedTable,
+                total,
+                savedAt: new Date().toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })
+            };
+            pendingOrders.push(pending);
+            updateOpenOrdersBadge();
+
+            // Clear current cart
+            cart = [];
+            selectedItemId = null;
+            cartDiscount = 0;
+            const discInputEl = document.getElementById('cart-discount-input');
+            if (discInputEl) discInputEl.value = 0;
+            selectedTable = null;
+            const hdr = document.getElementById("cart-header-table");
+            if (hdr) hdr.textContent = "Order";
+            saveCart();
+            renderMenu();
+            renderCart();
+            renderCartTotals();
+            renderTableGrid();
+            showNotification(`"${label}" saved — start a new order`, "success");
+        }
+
+        function toggleOpenOrdersPanel() {
+            const panel = document.getElementById("open-orders-panel");
+            if (!panel) return;
+            const isVisible = panel.style.display !== "none";
+            if (isVisible) {
+                panel.style.display = "none";
+            } else {
+                renderOpenOrdersList();
+                panel.style.display = "flex";
+                panel.style.flexDirection = "column";
+            }
+        }
+
+        function renderOpenOrdersList() {
+            const list = document.getElementById("open-orders-list");
+            if (!list) return;
+            if (pendingOrders.length === 0) {
+                list.innerHTML = `<div class="open-orders-empty">🛒 No pending orders</div>`;
+                return;
+            }
+            const curr = settings.currency || "₹";
+            list.innerHTML = pendingOrders.map(o => `
+                <div class="open-order-item">
+                    <div class="open-order-info">
+                        <div class="open-order-name">${o.label}</div>
+                        <div class="open-order-meta">${o.cart.length} item${o.cart.length !== 1 ? "s" : ""} · ${curr}${o.total.toFixed(2)} · ${o.savedAt}</div>
+                    </div>
+                    <button class="open-order-resume" onclick="resumeOrder(${o.id})">Resume</button>
+                    <button class="open-order-delete" onclick="deletePendingOrder(${o.id})">✕</button>
+                </div>`).join("");
+        }
+
+        function resumeOrder(id) {
+            const idx = pendingOrders.findIndex(o => o.id === id);
+            if (idx === -1) return;
+
+            // Save current cart if not empty
+            if (cart.length > 0) {
+                const curr = settings.currency || "₹";
+                const total = cart.reduce((s, i) => s + i.price * i.qty, 0);
+                const label = selectedTable ? `Table ${selectedTable}` : `Order #${pendingOrders.length + 1}`;
+                pendingOrders.push({
+                    id: Date.now(),
+                    label,
+                    cart: JSON.parse(JSON.stringify(cart)),
+                    discount: cartDiscount,
+                    orderType: currentOrderType,
+                    table: selectedTable,
+                    total,
+                    savedAt: new Date().toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })
+                });
+            }
+
+            const o = pendingOrders.splice(idx, 1)[0];
+            cart = JSON.parse(JSON.stringify(o.cart));
+            cartDiscount = o.discount || 0;
+            currentOrderType = o.orderType || "dine-in";
+            selectedTable = o.table || null;
+
+            const discInputEl = document.getElementById('cart-discount-input');
+            if (discInputEl) discInputEl.value = cartDiscount;
+
+            const hdr = document.getElementById("cart-header-table");
+            if (hdr) hdr.textContent = selectedTable ? `Table ${selectedTable}` : "Order";
+
+            updateOpenOrdersBadge();
+            saveCart();
+            renderMenu();
+            renderCart();
+            renderCartTotals();
+            renderTableGrid();
+            document.getElementById("open-orders-panel").style.display = "none";
+            showNotification(`Resumed "${o.label}"`, "success");
+        }
+
+        function deletePendingOrder(id) {
+            pendingOrders = pendingOrders.filter(o => o.id !== id);
+            updateOpenOrdersBadge();
+            renderOpenOrdersList();
+            if (pendingOrders.length === 0) {
+                document.getElementById("open-orders-panel").style.display = "none";
+            }
+        }
+
+        function updateOpenOrdersBadge() {
+            const badge = document.getElementById("open-orders-badge");
+            if (!badge) return;
+            if (pendingOrders.length > 0) {
+                badge.textContent = pendingOrders.length;
+                badge.style.display = "inline";
+            } else {
+                badge.style.display = "none";
+            }
+        }
+
         function selectCartItem(id) {
             selectedItemId = id;
             updateGlobalController();
@@ -3781,11 +4098,27 @@
         }
 
         function printReceipt() {
-            window.print();
-            // Automatically start a new order after printing completes
-            window.addEventListener('afterprint', () => {
-                newOrder();
-            }, { once: true });
+            // Gather the plain-text receipt lines from the <pre> inside receipt-content
+            const receiptEl = els["receipt-content"];
+            const preEl = receiptEl ? receiptEl.querySelector('pre') : null;
+            const receiptText = preEl ? preEl.innerText : '';
+
+            if (window.pywebview && window.pywebview.api && receiptText) {
+                window.pywebview.api.print_receipt_win32(receiptText).then(result => {
+                    if (result && result.ok) {
+                        newOrder();
+                    } else {
+                        const err = (result && result.error) || 'Print failed';
+                        showNotification('Print error: ' + err, 'error');
+                    }
+                }).catch(e => {
+                    showNotification('Print error: ' + e, 'error');
+                });
+            } else {
+                // Fallback for non-Windows or dev mode
+                window.print();
+                window.addEventListener('afterprint', () => { newOrder(); }, { once: true });
+            }
         }
 
         function newOrder() {
@@ -4834,6 +5167,16 @@
         }
 
         window.addEventListener('pywebviewready', init);
+
+        // Close open orders panel when clicking outside
+        document.addEventListener("click", (e) => {
+            const panel = document.getElementById("open-orders-panel");
+            const btn = document.getElementById("open-orders-btn");
+            if (panel && panel.style.display !== "none" &&
+                !panel.contains(e.target) && !btn.contains(e.target)) {
+                panel.style.display = "none";
+            }
+        });
 
         // Fallback for regular browser environment where pywebviewready never fires
         document.addEventListener("DOMContentLoaded", () => {
