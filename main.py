@@ -1,5 +1,4 @@
 
-Main · PY
 import webview
 import os
 import sys
