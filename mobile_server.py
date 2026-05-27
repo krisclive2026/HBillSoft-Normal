@@ -205,12 +205,20 @@ def create_flask_app():
     @app.route('/api/settings')
     def api_settings():
         _, _, settings = get_menu_and_settings()
+        table_count = int(settings.get('tableCount', 10))
         return jsonify({
             'ok':             True,
             'restaurantName': settings.get('restaurantName', 'Restaurant'),
             'currency':       settings.get('currency', '₹'),
             'address':        settings.get('address', ''),
+            'tableCount':     table_count,
         })
+ 
+    @app.route('/api/tables')
+    def api_tables():
+        _, _, settings = get_menu_and_settings()
+        table_count = int(settings.get('tableCount', 10))
+        return jsonify({'ok': True, 'tableCount': table_count})
  
     @app.route('/api/order', methods=['POST'])
     def api_order():
