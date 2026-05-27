@@ -33,7 +33,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Inter'
 .cart-pill .count{background:rgba(255,255,255,0.25);border-radius:12px;padding:1px 7px;font-size:0.72rem}
  
 /* ── CATEGORIES ── */
-.cat-row{display:flex;gap:8px;overflow-x:auto;padding:12px 16px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.cat-row{position:sticky;top:57px;z-index:90;background:var(--bg);display:flex;gap:8px;overflow-x:auto;padding:10px 16px;scrollbar-width:none;-webkit-overflow-scrolling:touch;border-bottom:1px solid var(--border)}
 .cat-row::-webkit-scrollbar{display:none}
 .cat-chip{flex-shrink:0;display:flex;align-items:center;gap:5px;padding:7px 14px;border-radius:24px;border:1.5px solid var(--border);background:var(--card);color:var(--text2);font-size:0.8rem;font-weight:600;cursor:pointer;transition:var(--transition);white-space:nowrap}
 .cat-chip.active{border-color:var(--accent);background:var(--accent-lt);color:var(--accent)}
@@ -213,7 +213,9 @@ async function loadData() {
  
     if (mRes.ok && Array.isArray(mRes.menu)) {
       menu = mRes.menu;
-      categories = Array.isArray(mRes.categories) ? mRes.categories : [];
+      categories = Array.isArray(mRes.categories) && mRes.categories.length > 0
+        ? mRes.categories
+        : deriveCategoriesFromMenu(mRes.menu);
     } else {
       throw new Error(mRes.error || 'Menu data missing from server response');
     }
@@ -241,6 +243,20 @@ async function loadData() {
 }
  
 // ── Categories ─────────────────────────────────────────────────────────────
+function deriveCategoriesFromMenu(items) {
+  const seen = new Map();
+  for (const item of items) {
+    if (item.category && !seen.has(String(item.category))) {
+      seen.set(String(item.category), {
+        id:   String(item.category),
+        name: String(item.category).replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+        icon: '🍽️'
+      });
+    }
+  }
+  return Array.from(seen.values());
+}
+
 function renderCategories() {
   const row = document.getElementById('cat-row');
   const all = [{ id: 'all', name: 'All', icon: '📋' }, ...categories];
@@ -428,8 +444,8 @@ function renderCartDrawer() {
         ✅ Place Order · ${curr()}${subtotal.toFixed(2)}
       </button>
     </div>`;
-
 }
+
  
 // ── Table Picker ────────────────────────────────────────────────────────────
 function pickTable(n) {
