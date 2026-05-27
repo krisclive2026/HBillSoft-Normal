@@ -5196,15 +5196,18 @@
             const mmPage = document.getElementById("menu-manager-page");
             const posBtn = document.getElementById("pos-view-btn");
             const menuBtn = document.getElementById("menu-view-btn");
+            const actionBar = document.getElementById("global-action-bar");
 
             if (view === "menu-manager") {
                 posContainer.style.display = "none";
+                if (actionBar) actionBar.style.display = "none";
                 mmPage.classList.add("active");
                 posBtn.classList.remove("active");
                 menuBtn.classList.add("active");
                 refreshMMPage();
             } else {
                 posContainer.style.display = "";
+                if (actionBar) actionBar.style.display = "";
                 mmPage.classList.remove("active");
                 posBtn.classList.add("active");
                 menuBtn.classList.remove("active");
