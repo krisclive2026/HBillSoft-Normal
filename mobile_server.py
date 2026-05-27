@@ -108,34 +108,59 @@ def delete_pending(order_id: str) -> bool:
  
 def get_menu_and_settings():
     """Read menu, categories and settings directly from SQLite."""
+    if not os.path.exists(DB_FILE):
+        print(f'[MobileServer] Database not found at: {DB_FILE}')
+        return [], [], {}
     try:
         conn = sqlite3.connect(DB_FILE)
         conn.row_factory = sqlite3.Row
  
+        # Exclude image_data here — served separately via /api/menu/image/<id>
+        # to keep the menu JSON response small and fast on mobile
         menu_rows = conn.execute(
-            'SELECT id, name, price, category, image, image_data FROM menu_items ORDER BY sort_order, id'
+            'SELECT id, name, price, category, image, '
+            '(CASE WHEN image_data IS NOT NULL AND image_data != "" THEN 1 ELSE 0 END) as has_image '
+            'FROM menu_items ORDER BY sort_order, id'
         ).fetchall()
         menu = []
         for r in menu_rows:
-            item = {'id': r['id'], 'name': r['name'], 'price': r['price'],
-                    'category': r['category'], 'image': r['image']}
-            if r['image_data']:
-                item['imageData'] = r['image_data']
-            menu.append(item)
+            menu.append({
+                'id':       r['id'],
+                'name':     r['name'],
+                'price':    r['price'],
+                'category': r['category'],
+                'image':    r['image'] or '🍽️',
+                'hasImage': bool(r['has_image']),
+            })
  
         cat_rows = conn.execute(
             'SELECT id, name, icon FROM categories ORDER BY sort_order, rowid'
         ).fetchall()
-        categories = [{'id': r['id'], 'name': r['name'], 'icon': r['icon']} for r in cat_rows]
+        categories = [{'id': r['id'], 'name': r['name'], 'icon': r['icon'] or '🍽️'} for r in cat_rows]
  
         settings_row = conn.execute('SELECT data FROM app_settings WHERE id=1').fetchone()
         settings = json.loads(settings_row['data']) if settings_row else {}
  
         conn.close()
+        print(f'[MobileServer] Loaded {len(menu)} menu items, {len(categories)} categories')
         return menu, categories, settings
     except Exception as e:
         print(f'[MobileServer] get_menu_and_settings error: {e}')
         return [], [], {}
+ 
+ 
+def get_item_image(item_id: int) -> str | None:
+    """Fetch image_data for a single menu item."""
+    try:
+        conn = sqlite3.connect(DB_FILE)
+        row = conn.execute(
+            'SELECT image_data FROM menu_items WHERE id = ?', (item_id,)
+        ).fetchone()
+        conn.close()
+        return row[0] if row and row[0] else None
+    except Exception as e:
+        print(f'[MobileServer] get_item_image error: {e}')
+        return None
  
 # ── Flask app ─────────────────────────────────────────────────────────────────
 _flask_app = None
@@ -165,7 +190,17 @@ def create_flask_app():
     @app.route('/api/menu')
     def api_menu():
         menu, categories, _ = get_menu_and_settings()
+        if not menu:
+            print('[MobileServer] WARNING: /api/menu returned 0 items — check that menu is saved in the POS app')
         return jsonify({'ok': True, 'menu': menu, 'categories': categories})
+ 
+    @app.route('/api/menu/image/<int:item_id>')
+    def api_menu_image(item_id):
+        """Serve image_data for a single item (keeps /api/menu payload small)."""
+        data = get_item_image(item_id)
+        if not data:
+            return jsonify({'ok': False}), 404
+        return jsonify({'ok': True, 'imageData': data})
  
     @app.route('/api/settings')
     def api_settings():
