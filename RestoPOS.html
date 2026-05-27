@@ -5470,11 +5470,29 @@
                     imageData: menuItem ? menuItem.imageData : null
                 };
             });
+
+            // Assign to table if a valid table number was provided
+            const tableNum = parseInt(order.table_no);
+            if (!isNaN(tableNum) && tableNum > 0 && tableNum <= tableCount) {
+                selectedTable = tableNum;
+                tableOrders[tableNum] = JSON.parse(JSON.stringify(cart));
+                const hdr = document.getElementById("cart-header-table");
+                if (hdr) hdr.textContent = `Table ${tableNum}`;
+            } else {
+                // Takeaway or no table
+                selectedTable = null;
+                const hdr = document.getElementById("cart-header-table");
+                if (hdr) hdr.textContent = order.table_no === 'takeaway' ? '🛍️ Takeaway' : 'Order';
+            }
+
             saveCart();
+            renderMenu();
             renderCart();
+            renderCartTotals();
+            renderTableGrid();
             switchView('pos');
             toggleMobileOrdersPanel();
-            showNotification("Mobile order loaded into cart", "success");
+            showNotification(`Mobile order loaded${selectedTable ? ` → Table ${selectedTable}` : ''}`, "success");
             await dismissMobileOrder(order.id);
         }
 
