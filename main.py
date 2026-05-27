@@ -1,3 +1,5 @@
+
+Main · PY
 import webview
 import os
 import sys
@@ -11,11 +13,11 @@ import socket
 import struct
 import time
 import sqlite3
-
+ 
 from cryptography.hazmat.primitives.asymmetric import padding
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.backends import default_backend
-
+ 
 try:
     from openpyxl import load_workbook, Workbook
     from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
@@ -23,18 +25,23 @@ try:
     _OPENPYXL_OK = True
 except ImportError:
     _OPENPYXL_OK = False
-
+ 
 # ─── paths ────────────────────────────────────────────────────────────────────
 def resource_path(filename):
     if hasattr(sys, '_MEIPASS'):
         return os.path.join(sys._MEIPASS, filename)
     return os.path.join(os.path.dirname(os.path.abspath(__file__)), filename)
-
+ 
 # ── Hidden data folder (sits next to the app, invisible in file explorer) ──────
-_APP_DIR     = os.path.dirname(os.path.abspath(__file__))
+# When frozen by PyInstaller, __file__ resolves to the temp _MEIPASS extraction
+# folder. Use sys.executable when frozen so data always lives next to the .exe.
+if getattr(sys, 'frozen', False):
+    _APP_DIR = os.path.dirname(os.path.abspath(sys.executable))
+else:
+    _APP_DIR = os.path.dirname(os.path.abspath(__file__))
 _DATA_DIR    = os.path.join(_APP_DIR, '.hbillsoft')
 os.makedirs(_DATA_DIR, exist_ok=True)
-
+ 
 # On Windows, mark the folder as hidden via attrib
 if platform.system() == 'Windows':
     try:
@@ -42,17 +49,17 @@ if platform.system() == 'Windows':
         subprocess.call(['attrib', '+H', _DATA_DIR], shell=False)
     except Exception:
         pass
-
+ 
 def data_path(filename):
     """Resolve a data file into the hidden .hbillsoft folder."""
     return os.path.join(_DATA_DIR, filename)
-
+ 
 CONFIG_FILE    = data_path('config.json')
 LICENSE_FILE   = data_path('license.dat')
 LASTRUN_FILE   = data_path('lastrun.dat')   # stores last-seen date (hidden from user)
 EXCEL_DB_FILE  = data_path('sales_data.xlsx')  # auto-saved sales database
 DB_FILE        = data_path('sales_data.db')    # SQLite database
-
+ 
 # ─── RSA public key (vendor embeds this; private key stays with vendor) ───────
 # NOTE: When you generate a new key pair in keygen_gui.py (tkinter),
 #       replace the block below with the new public key shown in that dialog.
@@ -65,9 +72,9 @@ FA97+tw55p05FwXwxunnQXhGNMPFJppz4iDk9hnZSzIPagj53PMjg/VFcH21I2Yz
 xcMjdssJaEu69EqNbQbYti3SmSAfyNQh1P6VHKVI3jGhLRdvEY7Ml7JWWlfHvD5o
 swIDAQAB
 -----END PUBLIC KEY-----"""
-
+ 
 # ─── Clock tamper detection ───────────────────────────────────────────────────
-
+ 
 # Max allowed drift between system clock and NTP (seconds)
 NTP_DRIFT_TOLERANCE = 86400          # 1 day — generous for offline use
 # NTP servers to try (in order)
@@ -77,7 +84,7 @@ NTP_SERVERS = [
     'pool.ntp.org',
     'time.windows.com',
 ]
-
+ 
 def _get_ntp_time() -> datetime.date | None:
     """
     Query NTP servers for the real current time.
@@ -100,8 +107,8 @@ def _get_ntp_time() -> datetime.date | None:
         except Exception:
             continue
     return None  # all servers unreachable (offline)
-
-
+ 
+ 
 def _load_last_run_date() -> datetime.date | None:
     """Load the last-seen date stored on disk (obfuscated, not plain text)."""
     try:
@@ -112,8 +119,8 @@ def _load_last_run_date() -> datetime.date | None:
         return datetime.date.fromisoformat(decoded)
     except Exception:
         return None
-
-
+ 
+ 
 def _save_last_run_date(date: datetime.date):
     """Persist today's date to disk (lightly obfuscated)."""
     try:
@@ -124,8 +131,8 @@ def _save_last_run_date(date: datetime.date):
             f.write(encoded)
     except Exception:
         pass  # read-only filesystem edge case — don't crash
-
-
+ 
+ 
 def detect_clock_tampering(issued_date_str: str) -> dict:
     """
     Run all three clock-tamper checks.
@@ -135,7 +142,7 @@ def detect_clock_tampering(issued_date_str: str) -> dict:
       source   (str)   — 'ntp' | 'lastrun' | 'issued' | 'ok'
     """
     today = datetime.date.today()
-
+ 
     # ── Layer 1: Issued-date check (always offline) ───────────────────────────
     # If today is BEFORE the issue date, the clock was clearly rolled back.
     try:
@@ -148,7 +155,7 @@ def detect_clock_tampering(issued_date_str: str) -> dict:
             }
     except Exception:
         pass
-
+ 
     # ── Layer 2: Last-run date check (always offline) ─────────────────────────
     # If today is BEFORE the last time the app ran, the clock was rolled back.
     last_run = _load_last_run_date()
@@ -158,7 +165,7 @@ def detect_clock_tampering(issued_date_str: str) -> dict:
             'reason':   'System date appears to have been set back. Please correct your system clock.',
             'source':   'lastrun'
         }
-
+ 
     # ── Layer 3: NTP check (online, best-effort) ──────────────────────────────
     # If we can reach a time server, compare against system clock.
     ntp_date = _get_ntp_time()
@@ -170,17 +177,17 @@ def detect_clock_tampering(issued_date_str: str) -> dict:
                 'reason':   f'System clock is {drift_days} day(s) off from internet time. Please correct your system clock.',
                 'source':   'ntp'
             }
-
+ 
     # All checks passed — update last-run date
     _save_last_run_date(today)
     return {'tampered': False, 'reason': '', 'source': 'ok'}
-
-
+ 
+ 
 # ─── System Code (machine fingerprint) ────────────────────────────────────────
 def get_system_code() -> str:
     """Build a stable machine fingerprint from hardware identifiers."""
     parts = []
-
+ 
     try:
         parts.append(str(uuid.getnode()))
     except Exception:
@@ -197,7 +204,7 @@ def get_system_code() -> str:
         parts.append(platform.processor())
     except Exception:
         pass
-
+ 
     for path in ['/etc/machine-id', '/var/lib/dbus/machine-id']:
         try:
             with open(path) as f:
@@ -214,17 +221,17 @@ def get_system_code() -> str:
             parts.append(val)
         except Exception:
             pass
-
+ 
     raw    = '|'.join(parts)
     digest = hashlib.sha256(raw.encode()).hexdigest()
     d      = digest[:16].upper()
     return '-'.join([d[i:i+4] for i in range(0, 16, 4)])
-
-
+ 
+ 
 # ─── License validation ───────────────────────────────────────────────────────
 def _load_public_key():
     return serialization.load_pem_public_key(PUBLIC_KEY_PEM, backend=default_backend())
-
+ 
 def verify_license_key(license_key: str, system_code: str) -> dict:
     """
     Returns dict with keys:
@@ -236,30 +243,30 @@ def verify_license_key(license_key: str, system_code: str) -> dict:
         clean_key = license_key.strip()
         clean_key = clean_key.replace('\r', '').replace('\n', '').replace(' ', '')
         clean_key = clean_key.lstrip('\ufeff')
-
+ 
         raw         = base64.b64decode(clean_key.encode())
         bundle      = json.loads(raw)
         payload_b64 = bundle['payload']
         sig_b64     = bundle['signature']
-
+ 
         payload_bytes = base64.b64decode(payload_b64)
         sig_bytes     = base64.b64decode(sig_b64)
-
+ 
         # 1. Verify RSA signature
         pub_key = _load_public_key()
         pub_key.verify(sig_bytes, payload_bytes, padding.PKCS1v15(), hashes.SHA256())
-
+ 
         # 2. Decode payload
         data = json.loads(payload_bytes)
-
+ 
         # 3. Check system code binding
         if data.get('system_code', '').upper() != system_code.upper():
             return {'valid': False, 'error': 'License is not valid for this machine.', 'clock_tampered': False}
-
+ 
         # 4. Check product
         if data.get('product', '') != 'HBILLSOFT':
             return {'valid': False, 'error': 'Invalid product in license.', 'clock_tampered': False}
-
+ 
         # 5. Clock tamper detection (all three layers)
         issued_str  = data.get('issued', datetime.date.today().isoformat())
         tamper_info = detect_clock_tampering(issued_str)
@@ -274,13 +281,13 @@ def verify_license_key(license_key: str, system_code: str) -> dict:
                 'issued':         issued_str,
                 'days_left':      0,
             }
-
+ 
         # 6. Check expiry
         expiry_date = datetime.date.fromisoformat(data['expiry'])
         today       = datetime.date.today()
         expired     = today > expiry_date
         days_left   = (expiry_date - today).days if not expired else 0
-
+ 
         return {
             'valid':          True,
             'expired':        expired,
@@ -293,19 +300,19 @@ def verify_license_key(license_key: str, system_code: str) -> dict:
         }
     except Exception as e:
         return {'valid': False, 'error': f'License verification failed: {e}', 'clock_tampered': False}
-
-
+ 
+ 
 def load_saved_license() -> str:
     try:
         with open(LICENSE_FILE, 'r') as f:
             return f.read().strip()
     except Exception:
         return ''
-
+ 
 def save_license(key: str):
     with open(LICENSE_FILE, 'w') as f:
         f.write(key.strip())
-
+ 
 # ─── Config helpers ───────────────────────────────────────────────────────────
 def load_config_from_file():
     try:
@@ -313,7 +320,7 @@ def load_config_from_file():
             return json.load(f)
     except (FileNotFoundError, json.JSONDecodeError):
         return {}
-
+ 
 def save_config_to_file(data):
     try:
         with open(CONFIG_FILE, 'w', encoding='utf-8') as f:
@@ -321,7 +328,7 @@ def save_config_to_file(data):
         return True
     except Exception:
         return False
-
+ 
 # ─── SQLite Database Functions ────────────────────────────────────────────────
 def init_database():
     """Initialize SQLite database with orders, items, menu and categories tables."""
@@ -356,7 +363,7 @@ def init_database():
                 FOREIGN KEY(order_id) REFERENCES orders(id)
             )
         ''')
-
+ 
         # Create categories table
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS categories (
@@ -366,7 +373,7 @@ def init_database():
                 sort_order INTEGER DEFAULT 0
             )
         ''')
-
+ 
         # Create menu_items table
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS menu_items (
@@ -379,7 +386,7 @@ def init_database():
                 sort_order INTEGER DEFAULT 0
             )
         ''')
-
+ 
         # Create settings table (single JSON row)
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS app_settings (
@@ -387,7 +394,7 @@ def init_database():
                 data TEXT NOT NULL
             )
         ''')
-
+ 
         # Create cart table (persists current in-progress cart)
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS cart (
@@ -395,16 +402,66 @@ def init_database():
                 data TEXT NOT NULL
             )
         ''')
-
+ 
+        # ── Seed default categories if table is empty ──────────────────────
+        existing_cats = cursor.execute('SELECT COUNT(*) FROM categories').fetchone()[0]
+        if existing_cats == 0:
+            default_categories = [
+                ('burgers',      'Burgers',      '🍔', 0),
+                ('pizza',        'Pizza',        '🍕', 1),
+                ('drinks',       'Drinks',       '🥤', 2),
+                ('desserts',     'Desserts',     '🍰', 3),
+                ('south-indian', 'South Indian', '🍛', 4),
+                ('north-indian', 'North Indian', '🥘', 5),
+            ]
+            cursor.executemany(
+                'INSERT OR IGNORE INTO categories (id, name, icon, sort_order) VALUES (?,?,?,?)',
+                default_categories
+            )
+ 
+        # ── Seed default menu items if table is empty ────────────────────────
+        existing_menu = cursor.execute('SELECT COUNT(*) FROM menu_items').fetchone()[0]
+        if existing_menu == 0:
+            default_menu = [
+                (1,  'Classic Cheeseburger', 149, 'burgers',      '🍔', 0),
+                (2,  'Double Bacon Burger',  249, 'burgers',      '🥓', 1),
+                (3,  'Veggie Supreme',       129, 'burgers',      '🥬', 2),
+                (4,  'Spicy Chicken Burger', 179, 'burgers',      '🍗', 3),
+                (5,  'Margherita Pizza',     199, 'pizza',        '🍕', 4),
+                (6,  'Pepperoni Feast',      299, 'pizza',        '🍕', 5),
+                (7,  'Veggie Paradise',      249, 'pizza',        '🍕', 6),
+                (8,  'BBQ Chicken Pizza',    349, 'pizza',        '🍕', 7),
+                (9,  'Coca Cola',             49, 'drinks',       '🥤', 8),
+                (10, 'Fresh Lime Soda',       59, 'drinks',       '🍋', 9),
+                (11, 'Mango Lassi',           79, 'drinks',       '🥭', 10),
+                (12, 'Iced Coffee',           99, 'drinks',       '☕', 11),
+                (13, 'Chocolate Brownie',    129, 'desserts',     '🍫', 12),
+                (14, 'Gulab Jamun',           89, 'desserts',     '🍮', 13),
+                (15, 'Ice Cream Sundae',     149, 'desserts',     '🍨', 14),
+                (16, 'Rasmalai',              99, 'desserts',     '🍮', 15),
+                (17, 'Masala Dosa',           89, 'south-indian', '🥞', 16),
+                (18, 'Idli Sambar',           69, 'south-indian', '🍚', 17),
+                (19, 'Medu Vada',             79, 'south-indian', '🍩', 18),
+                (20, 'Uttapam',               99, 'south-indian', '🥞', 19),
+                (21, 'Butter Chicken',       299, 'north-indian', '🍗', 20),
+                (22, 'Paneer Tikka',         249, 'north-indian', '🧀', 21),
+                (23, 'Dal Makhani',          199, 'north-indian', '🍲', 22),
+                (24, 'Naan Basket',          129, 'north-indian', '🍞', 23),
+            ]
+            cursor.executemany(
+                'INSERT OR IGNORE INTO menu_items (id, name, price, category, image, sort_order) VALUES (?,?,?,?,?,?)',
+                default_menu
+            )
+ 
         conn.commit()
         conn.close()
         return True
     except Exception as e:
         print(f"Database init error: {e}")
         return False
-
+ 
 # ─── Menu & Categories DB helpers ─────────────────────────────────────────────
-
+ 
 def save_categories_to_db(categories: list) -> dict:
     """Replace all categories in the DB."""
     try:
@@ -421,7 +478,7 @@ def save_categories_to_db(categories: list) -> dict:
         return {'ok': True}
     except Exception as e:
         return {'ok': False, 'error': str(e)}
-
+ 
 def load_categories_from_db() -> dict:
     """Load all categories from the DB."""
     try:
@@ -435,7 +492,7 @@ def load_categories_from_db() -> dict:
         return {'ok': True, 'categories': categories}
     except Exception as e:
         return {'ok': False, 'error': str(e), 'categories': []}
-
+ 
 def save_menu_to_db(menu: list) -> dict:
     """Replace all menu items in the DB."""
     try:
@@ -460,7 +517,7 @@ def save_menu_to_db(menu: list) -> dict:
         return {'ok': True}
     except Exception as e:
         return {'ok': False, 'error': str(e)}
-
+ 
 def load_menu_from_db() -> dict:
     """Load all menu items from the DB."""
     try:
@@ -485,7 +542,7 @@ def load_menu_from_db() -> dict:
         return {'ok': True, 'menu': menu}
     except Exception as e:
         return {'ok': False, 'error': str(e), 'menu': []}
-
+ 
 def save_settings_to_db(settings: dict) -> dict:
     """Persist app settings as a single JSON blob."""
     try:
@@ -502,7 +559,7 @@ def save_settings_to_db(settings: dict) -> dict:
         return {'ok': True}
     except Exception as e:
         return {'ok': False, 'error': str(e)}
-
+ 
 def load_settings_from_db() -> dict:
     """Load app settings from SQLite. Returns {} if not yet saved."""
     try:
@@ -516,7 +573,7 @@ def load_settings_from_db() -> dict:
         return {'ok': True, 'settings': {}}
     except Exception as e:
         return {'ok': False, 'error': str(e), 'settings': {}}
-
+ 
 def save_cart_to_db(cart: list) -> dict:
     """Persist the current cart as a single JSON blob."""
     try:
@@ -531,7 +588,7 @@ def save_cart_to_db(cart: list) -> dict:
         return {'ok': True}
     except Exception as e:
         return {'ok': False, 'error': str(e)}
-
+ 
 def load_cart_from_db() -> dict:
     """Load the persisted cart from SQLite. Returns [] if empty."""
     try:
@@ -545,7 +602,7 @@ def load_cart_from_db() -> dict:
         return {'ok': True, 'cart': []}
     except Exception as e:
         return {'ok': False, 'error': str(e), 'cart': []}
-
+ 
 def save_order_to_db(order: dict) -> dict:
     """Save an order and its items to SQLite database."""
     try:
@@ -589,7 +646,7 @@ def save_order_to_db(order: dict) -> dict:
     except Exception as e:
         print(f"Error saving order to DB: {e}")
         return {'ok': False, 'error': str(e)}
-
+ 
 def load_orders_from_db() -> dict:
     """Load all orders from SQLite database."""
     try:
@@ -646,7 +703,7 @@ def load_orders_from_db() -> dict:
     except Exception as e:
         print(f"Error loading orders from DB: {e}")
         return {'ok': False, 'error': str(e), 'orders': []}
-
+ 
 def get_sales_summary(from_date=None, to_date=None) -> dict:
     """
     Get sales summary with items grouped by name, quantities, and date-based filtering.
@@ -727,7 +784,7 @@ def get_sales_summary(from_date=None, to_date=None) -> dict:
                 cursor.execute(count_query)
                 orders_count = cursor.fetchone()[0]
                 cursor.execute(sum_query)
-
+ 
             sums = cursor.fetchone()
             if sums:
                 total_sgst = float(sums[0] or 0)
@@ -735,7 +792,7 @@ def get_sales_summary(from_date=None, to_date=None) -> dict:
                 grand_total_including_tax = float(sums[2] or 0)
         except Exception:
             orders_count = None
-
+ 
         conn.close()
         return {
             'ok': True,
@@ -750,32 +807,32 @@ def get_sales_summary(from_date=None, to_date=None) -> dict:
     except Exception as e:
         print(f"Error getting sales summary: {e}")
         return {'ok': False, 'error': str(e), 'summary': [], 'total_revenue': 0}
-
+ 
 # ─── pywebview API ────────────────────────────────────────────────────────────
 class Api:
     def close_window(self):
         window.destroy()
-
+ 
     def load_config(self):
         return load_config_from_file()
-
+ 
     def save_config(self, data):
         return save_config_to_file(data)
-
+ 
     def get_session_count(self):
         return load_config_from_file().get('sessionCount', 0)
-
+ 
     # --- License API ---
     def get_system_code(self):
         return get_system_code()
-
+ 
     def activate_license(self, license_key: str):
         sc     = get_system_code()
         result = verify_license_key(license_key, sc)
         if result['valid'] and not result['expired'] and not result.get('clock_tampered'):
             save_license(license_key)
         return result
-
+ 
     def check_license(self):
         sc  = get_system_code()
         key = load_saved_license()
@@ -784,11 +841,11 @@ class Api:
         result = verify_license_key(key, sc)
         result['system_code'] = sc
         return result
-
+ 
     def renew_license(self, new_key: str):
         """Renew/replace an expired license with a new key."""
         return self.activate_license(new_key)
-
+ 
     # --- Mobile Server API ---
     def get_mobile_server_info(self):
         try:
@@ -801,14 +858,14 @@ class Api:
             }
         except Exception as e:
             return {'ok': False, 'error': str(e)}
-
+ 
     def get_pending_mobile_orders(self):
         try:
             import mobile_server
             return {'ok': True, 'orders': mobile_server.get_all_pending()}
         except Exception as e:
             return {'ok': False, 'error': str(e)}
-
+ 
     def dismiss_mobile_order(self, order_id):
         try:
             import mobile_server
@@ -816,12 +873,12 @@ class Api:
             return {'ok': ok}
         except Exception as e:
             return {'ok': False, 'error': str(e)}
-
+ 
     # --- Excel Sales DB ---
     def get_excel_path(self) -> str:
         """Return the path of the auto-saved sales Excel file."""
         return EXCEL_DB_FILE
-
+ 
     def save_order_to_excel(self, order: dict) -> dict:
         """
         After each completed order, rebuild the day-sheet in sales_data.xlsx
@@ -831,20 +888,20 @@ class Api:
         """
         if not _OPENPYXL_OK:
             return {'ok': False, 'error': 'openpyxl not installed. Run: pip install openpyxl'}
-
+ 
         try:
             r = load_settings_from_db(); cfg = r['settings'] if r['ok'] and r['settings'] else load_config_from_file()
             curr       = cfg.get('currency', '₹')
             restaurant = cfg.get('restaurantName', 'HBILLSOFT')
-
+ 
             order_dt   = datetime.datetime.fromisoformat(order.get('date', datetime.datetime.now().isoformat()))
             sheet_name = order_dt.strftime('%d-%b-%Y')   # e.g. "22-May-2026"
-
+ 
             # ── Pull today's aggregated data from SQLite ────────────────────
             day_start = order_dt.strftime('%Y-%m-%d') + 'T00:00:00'
             day_end   = order_dt.strftime('%Y-%m-%d') + 'T23:59:59'
             summary   = get_sales_summary(day_start, day_end)
-
+ 
             items       = summary.get('summary', [])      # [{name, quantity, avg_price, revenue}]
             sgst        = round(summary.get('total_sgst', 0), 2)
             cgst        = round(summary.get('total_cgst', 0), 2)
@@ -852,26 +909,26 @@ class Api:
             items_total = round(summary.get('total_revenue', 0), 2)
             discount    = round(max(items_total + sgst + cgst - grand_total, 0), 2)
             total_qty   = sum(it['quantity'] for it in items)
-
+ 
             # ── Style helpers ───────────────────────────────────────────────
             BLUE       = '1a3c5e'
             WHITE      = 'FFFFFF'
             LIGHT_BLUE = 'EAF2FB'
             GREEN_DARK = '1d5c2e'
-
+ 
             def tborder():
                 s = Side(style='thin', color='BBBBBB')
                 return Border(left=s, right=s, top=s, bottom=s)
-
+ 
             def mborder():
                 s = Side(style='medium', color=BLUE)
                 return Border(left=s, right=s, top=s, bottom=s)
-
+ 
             c_center = Alignment(horizontal='center', vertical='center')
             c_left   = Alignment(horizontal='left',   vertical='center', indent=1)
             c_right  = Alignment(horizontal='right',  vertical='center')
             money_fmt = f'"{curr}"#,##0.00'
-
+ 
             # ── Load or create workbook ─────────────────────────────────────
             if os.path.exists(EXCEL_DB_FILE):
                 wb = load_workbook(EXCEL_DB_FILE)
@@ -879,18 +936,18 @@ class Api:
                 wb = Workbook()
                 if 'Sheet' in wb.sheetnames:
                     del wb['Sheet']
-
+ 
             # Remove and recreate today's sheet so it's always fresh
             if sheet_name in wb.sheetnames:
                 del wb[sheet_name]
             ws = wb.create_sheet(title=sheet_name)
-
+ 
             # ── Column widths ───────────────────────────────────────────────
             ws.column_dimensions['A'].width = 36
             ws.column_dimensions['B'].width = 12
             ws.column_dimensions['C'].width = 18
             ws.column_dimensions['D'].width = 18
-
+ 
             # ── Row 1: Restaurant name ──────────────────────────────────────
             ws.merge_cells('A1:D1')
             c = ws['A1']
@@ -899,7 +956,7 @@ class Api:
             c.fill      = PatternFill('solid', fgColor=BLUE)
             c.alignment = c_center
             ws.row_dimensions[1].height = 24
-
+ 
             # ── Row 2: Report title ─────────────────────────────────────────
             ws.merge_cells('A2:D2')
             c = ws['A2']
@@ -908,7 +965,7 @@ class Api:
             c.fill      = PatternFill('solid', fgColor=BLUE)
             c.alignment = c_center
             ws.row_dimensions[2].height = 18
-
+ 
             # ── Row 3: Date ─────────────────────────────────────────────────
             ws.merge_cells('A3:D3')
             c = ws['A3']
@@ -917,11 +974,11 @@ class Api:
             c.fill      = PatternFill('solid', fgColor='F0F4F8')
             c.alignment = c_center
             ws.row_dimensions[3].height = 16
-
+ 
             # ── Row 4: blank ────────────────────────────────────────────────
             ws.append([])
             ws.row_dimensions[4].height = 6
-
+ 
             # ── Row 5: Column headers ───────────────────────────────────────
             headers = ['Item Name', 'Qty Sold', f'Unit Price ({curr})', f'Amount ({curr})']
             ws.append(headers)
@@ -932,7 +989,7 @@ class Api:
                 cell.alignment = c_center
                 cell.border    = tborder()
             ws.row_dimensions[5].height = 18
-
+ 
             # ── Item rows ───────────────────────────────────────────────────
             for i, item in enumerate(items):
                 row_num = 6 + i
@@ -953,12 +1010,12 @@ class Api:
                     ws.cell(row=row_num, column=col_idx).border = tborder()
                 ws.cell(row=row_num, column=3).number_format = money_fmt
                 ws.cell(row=row_num, column=4).number_format = money_fmt
-
+ 
             # ── Blank separator ─────────────────────────────────────────────
             sep = ws.max_row + 1
             ws.append([])
             ws.row_dimensions[sep].height = 8
-
+ 
             # ── Totals block ────────────────────────────────────────────────
             totals = [
                 ('Total Items Sold',           total_qty, items_total),
@@ -979,7 +1036,7 @@ class Api:
                 for col_idx in range(1, 5):
                     ws.cell(row=r, column=col_idx).fill   = PatternFill('solid', fgColor='F7F9FC')
                     ws.cell(row=r, column=col_idx).border = tborder()
-
+ 
             # ── Grand total row ─────────────────────────────────────────────
             ws.append([])
             gt = ws.max_row + 1
@@ -997,13 +1054,13 @@ class Api:
             for col_idx in range(1, 5):
                 ws.cell(row=gt, column=col_idx).border = mborder()
             ws.row_dimensions[gt].height = 22
-
+ 
             wb.save(EXCEL_DB_FILE)
             return {'ok': True, 'file': EXCEL_DB_FILE, 'sheet': sheet_name}
-
+ 
         except Exception as e:
             return {'ok': False, 'error': str(e)}
-
+ 
     def load_orders_from_excel(self) -> dict:
         """
         Load all orders from the persistent sales_data.xlsx file.
@@ -1011,12 +1068,12 @@ class Api:
         """
         if not _OPENPYXL_OK:
             return {'ok': False, 'error': 'openpyxl not installed', 'orders': []}
-
+ 
         orders = []
         try:
             if not os.path.exists(EXCEL_DB_FILE):
                 return {'ok': True, 'orders': []}
-
+ 
             wb = load_workbook(EXCEL_DB_FILE)
             
             # Load orders from all sheets (one sheet per day)
@@ -1074,24 +1131,24 @@ class Api:
                     continue
             
             return {'ok': True, 'orders': orders}
-
+ 
         except Exception as e:
             return {'ok': False, 'error': str(e), 'orders': []}
-
+ 
     def save_order(self, order: dict) -> dict:
         """Save order to SQLite database."""
         return save_order_to_db(order)
-
+ 
     def load_orders(self) -> dict:
         """Load all orders from SQLite database."""
         return load_orders_from_db()
-
+ 
     # --- Settings SQLite API ---
     def save_settings(self, settings: dict) -> dict:
         """Persist settings to SQLite (and config.json for legacy compat)."""
         save_config_to_file(settings)          # keep config.json in sync
         return save_settings_to_db(settings)
-
+ 
     def load_settings(self) -> dict:
         """Load settings from SQLite; fall back to config.json."""
         result = load_settings_from_db()
@@ -1101,37 +1158,37 @@ class Api:
         r = load_settings_from_db(); cfg = r['settings'] if r['ok'] and r['settings'] else load_config_from_file()
         cfg.pop('sessionCount', None)
         return {'ok': True, 'settings': cfg}
-
+ 
     # --- Cart SQLite API ---
     def save_cart(self, cart: list) -> dict:
         """Persist cart to SQLite."""
         return save_cart_to_db(cart)
-
+ 
     def load_cart(self) -> dict:
         """Load cart from SQLite."""
         return load_cart_from_db()
-
+ 
     # --- Menu & Categories SQLite API ---
     def save_menu(self, menu: list) -> dict:
         """Persist full menu to SQLite."""
         return save_menu_to_db(menu)
-
+ 
     def load_menu(self) -> dict:
         """Load full menu from SQLite."""
         return load_menu_from_db()
-
+ 
     def save_categories(self, categories: list) -> dict:
         """Persist full categories list to SQLite."""
         return save_categories_to_db(categories)
-
+ 
     def load_categories(self) -> dict:
         """Load full categories list from SQLite."""
         return load_categories_from_db()
-
+ 
     def get_sales_summary_api(self, from_date=None, to_date=None) -> dict:
         """Get sales summary with items and revenue."""
         return get_sales_summary(from_date, to_date)
-
+ 
     def export_sales_excel(self, from_date=None, to_date=None) -> dict:
         """
         Build a clean sales report Excel file and save it to the desktop.
@@ -1139,17 +1196,17 @@ class Api:
         """
         if not _OPENPYXL_OK:
             return {'ok': False, 'error': 'openpyxl not installed. Run: pip install openpyxl'}
-
+ 
         try:
             r = load_settings_from_db(); cfg = r['settings'] if r['ok'] and r['settings'] else load_config_from_file()
             curr = cfg.get('currency', '₹')
             restaurant = cfg.get('restaurantName', 'HBILLSOFT')
-
+ 
             # ── Fetch aggregated data ───────────────────────────────────────
             summary = get_sales_summary(from_date, to_date)
             if not summary['ok']:
                 return {'ok': False, 'error': summary.get('error', 'Failed to load data')}
-
+ 
             items       = summary.get('summary', [])      # [{name, quantity, avg_price, revenue}]
             sgst        = summary.get('total_sgst', 0)
             cgst        = summary.get('total_cgst', 0)
@@ -1158,39 +1215,39 @@ class Api:
             discount    = round(items_total + sgst + cgst - grand_total, 2)
             if discount < 0:
                 discount = 0
-
+ 
             # ── Style helpers ───────────────────────────────────────────────
             BLUE       = '1a3c5e'
             WHITE      = 'FFFFFF'
             LIGHT_BLUE = 'EAF2FB'
             YELLOW     = 'FFF9C4'
             GREEN_DARK = '1d5c2e'
-
+ 
             def thin_border():
                 s = Side(style='thin', color='BBBBBB')
                 return Border(left=s, right=s, top=s, bottom=s)
-
+ 
             def thick_border():
                 s = Side(style='medium', color=BLUE)
                 return Border(left=s, right=s, top=s, bottom=s)
-
+ 
             center  = Alignment(horizontal='center', vertical='center')
             left    = Alignment(horizontal='left',   vertical='center', indent=1)
             right_a = Alignment(horizontal='right',  vertical='center')
-
+ 
             # ── Build workbook ──────────────────────────────────────────────
             wb = Workbook()
             ws = wb.active
             ws.title = 'Sales Report'
-
+ 
             # Column widths: A=Item, B=Qty, C=Unit Price, D=Amount
             ws.column_dimensions['A'].width = 36
             ws.column_dimensions['B'].width = 12
             ws.column_dimensions['C'].width = 18
             ws.column_dimensions['D'].width = 18
-
+ 
             money_fmt = f'"{curr}"#,##0.00'
-
+ 
             # ── Header block (rows 1-3) ─────────────────────────────────────
             ws.merge_cells('A1:D1')
             c = ws['A1']
@@ -1199,7 +1256,7 @@ class Api:
             c.fill      = PatternFill('solid', fgColor=BLUE)
             c.alignment = center
             ws.row_dimensions[1].height = 24
-
+ 
             ws.merge_cells('A2:D2')
             c = ws['A2']
             c.value     = 'Sales Report'
@@ -1207,7 +1264,7 @@ class Api:
             c.fill      = PatternFill('solid', fgColor=BLUE)
             c.alignment = center
             ws.row_dimensions[2].height = 18
-
+ 
             # Period label
             if from_date or to_date:
                 fd = (from_date or '').split('T')[0]
@@ -1215,7 +1272,7 @@ class Api:
                 period = f'Period: {fd or "Start"}  →  {td or "Today"}'
             else:
                 period = f'Exported: {datetime.date.today().strftime("%d-%b-%Y")}'
-
+ 
             ws.merge_cells('A3:D3')
             c = ws['A3']
             c.value     = period
@@ -1223,10 +1280,10 @@ class Api:
             c.fill      = PatternFill('solid', fgColor='F0F4F8')
             c.alignment = center
             ws.row_dimensions[3].height = 16
-
+ 
             ws.append([])   # row 4 blank
             ws.row_dimensions[4].height = 6
-
+ 
             # ── Column headers (row 5) ──────────────────────────────────────
             headers = ['Item Name', 'Qty Sold', f'Unit Price ({curr})', f'Amount ({curr})']
             ws.append(headers)
@@ -1237,7 +1294,7 @@ class Api:
                 cell.alignment = center
                 cell.border    = thin_border()
             ws.row_dimensions[5].height = 18
-
+ 
             # ── Item rows ───────────────────────────────────────────────────
             for i, item in enumerate(items):
                 row_num = 6 + i
@@ -1256,15 +1313,15 @@ class Api:
                     cell.border = thin_border()
                 for col_idx in [3, 4]:
                     ws.cell(row=row_num, column=col_idx).number_format = money_fmt
-
+ 
             # ── Blank separator ─────────────────────────────────────────────
             sep_row = 6 + len(items)
             ws.append([])
             ws.row_dimensions[sep_row].height = 8
-
+ 
             # ── Totals block ────────────────────────────────────────────────
             total_qty = sum(it['quantity'] for it in items)
-
+ 
             totals = [
                 ('Total Items Sold',          total_qty,                       '',        items_total),
                 ('Discount',                  '',                              '',        discount),
@@ -1273,7 +1330,7 @@ class Api:
                 ('CGST',                      '',                              '',        cgst),
                 ('Total GST',                 '',                              '',        round(sgst + cgst, 2)),
             ]
-
+ 
             for label, qty, _, amount in totals:
                 r = ws.max_row + 1
                 ws.append([label, qty, '', round(amount, 2)])
@@ -1285,7 +1342,7 @@ class Api:
                 for col_idx in range(1, 5):
                     ws.cell(row=r, column=col_idx).border = thin_border()
                     ws.cell(row=r, column=col_idx).fill   = PatternFill('solid', fgColor='F7F9FC')
-
+ 
             # ── Grand total row ─────────────────────────────────────────────
             ws.append([])   # blank row
             gt_row = ws.max_row + 1
@@ -1303,48 +1360,19 @@ class Api:
             for col_idx in range(1, 5):
                 ws.cell(row=gt_row, column=col_idx).border = thick_border()
             ws.row_dimensions[gt_row].height = 22
-
+ 
             # ── Save to Desktop ─────────────────────────────────────────────
             today_str = datetime.date.today().strftime('%Y-%m-%d')
             desktop = os.path.join(os.path.expanduser('~'), 'Desktop')
             if not os.path.isdir(desktop):
                 desktop = os.path.expanduser('~')
             out_path = os.path.join(desktop, f'HBILLSOFT_Sales_{today_str}.xlsx')
-
+ 
             wb.save(out_path)
             return {'ok': True, 'file': out_path}
-
+ 
         except Exception as e:
             return {'ok': False, 'error': str(e)}
-
+ 
 # ─── Startup ──────────────────────────────────────────────────────────────────
 api = Api()
-
-# Initialize database
-init_database()
-
-config = load_config_from_file()
-config['sessionCount'] = config.get('sessionCount', 0) + 1
-save_config_to_file(config)
-
-html_file = resource_path('RestoPOS.html')
-
-# Start mobile server background thread
-try:
-    import mobile_server
-    mobile_server.start_mobile_server()
-except Exception as e:
-    print(f"Failed to start mobile server: {e}")
-
-window = webview.create_window(
-    title='HBILLSOFT',
-    url='file:///' + html_file.replace('\\', '/'),
-    width=1280,
-    height=800,
-    min_size=(1024, 600),
-    resizable=True,
-    fullscreen=True,
-    js_api=api
-)
-
-webview.start()
