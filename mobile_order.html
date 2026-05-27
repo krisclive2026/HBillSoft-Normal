@@ -180,6 +180,9 @@ let menu = [], categories = [], cart = [], settings = {};
 let currentCat = 'all';
 const curr = () => settings.currency || '₹';
  
+// Cache for lazily-loaded item images: { [id]: dataURL | null }
+const imageCache = {};
+ 
 // ── Fetch data ─────────────────────────────────────────────────────────────
 async function loadData() {
   const grid = document.getElementById('menu-grid');
@@ -205,6 +208,13 @@ async function loadData() {
       settings = sRes;
       document.getElementById('brand-name').textContent = sRes.restaurantName || 'Restaurant';
       document.title = sRes.restaurantName || 'Order Online';
+    }
+    if (menu.length === 0) {
+      grid.innerHTML = '<div class="empty"><div class="e-icon">🍽️</div>'
+        + '<p>Menu is not set up yet.</p>'
+        + '<p style="font-size:0.75rem;margin-top:4px;color:var(--text3)">Please add items in the POS app first.</p>'
+        + '<button onclick="loadData()" style="margin-top:12px;padding:8px 20px;border-radius:20px;border:1.5px solid var(--accent);background:transparent;color:var(--accent);font-weight:700;cursor:pointer;font-size:0.85rem">&#x1F504; Retry</button></div>';
+      return;
     }
     renderCategories();
     renderMenu();
@@ -241,22 +251,27 @@ function renderMenu() {
   const grid  = document.getElementById('menu-grid');
   const query = document.getElementById('search-input').value.trim().toLowerCase();
   let items   = menu;
-  if (currentCat !== 'all') items = items.filter(i => i.category === currentCat);
+  if (currentCat !== 'all') items = items.filter(i => String(i.category) === String(currentCat));
   if (query) items = items.filter(i => i.name.toLowerCase().includes(query));
  
   if (!items.length) {
     const hasQuery = document.getElementById('search-input').value.trim();
-    const icon = hasQuery ? '&#x1F50D;' : (menu.length === 0 ? '&#x1F37D;&#xFE0F;' : '&#x1F50D;');
-    const msg  = hasQuery ? 'No items match your search'
-                          : (menu.length === 0 ? 'Menu is empty' : 'No items in this category');
+    const icon = hasQuery ? '&#x1F50D;' : '&#x1F50D;';
+    const msg  = hasQuery ? 'No items match your search' : 'No items in this category';
     grid.innerHTML = '<div class="empty"><div class="e-icon">' + icon + '</div><p>' + msg + '</p></div>';
     return;
   }
   grid.innerHTML = items.map(item => {
     const qty = cart.find(c => c.id === item.id)?.qty || 0;
-    const img = item.imageData
-      ? `<img class="card-img" src="${item.imageData}" alt="${item.name}">`
-      : `<div class="card-img-ph">${item.image || '🍽️'}</div>`;
+    // Use cached image if available; otherwise show emoji placeholder and lazy-load
+    let img;
+    if (imageCache[item.id]) {
+      img = `<img class="card-img" src="${imageCache[item.id]}" alt="${item.name}">`;
+    } else if (item.hasImage) {
+      img = `<div class="card-img-ph" id="imgph-${item.id}">${item.image || '🍽️'}</div>`;
+    } else {
+      img = `<div class="card-img-ph">${item.image || '🍽️'}</div>`;
+    }
     return `
     <div class="food-card ${qty > 0 ? 'in-cart' : ''}">
       <div onclick="addItem(${item.id})">${img}</div>
@@ -271,6 +286,20 @@ function renderMenu() {
       </div>
     </div>`;
   }).join('');
+ 
+  // Lazy-load images for visible items that have one
+  items.filter(i => i.hasImage && !imageCache[i.id]).forEach(item => {
+    fetch(`/api/menu/image/${item.id}`)
+      .then(r => r.json())
+      .then(d => {
+        if (d.ok && d.imageData) {
+          imageCache[item.id] = d.imageData;
+          const ph = document.getElementById('imgph-' + item.id);
+          if (ph) ph.outerHTML = `<img class="card-img" src="${d.imageData}" alt="">`;
+        }
+      })
+      .catch(() => {}); // silently ignore — emoji placeholder remains
+  });
 }
  
 function addItem(id) {
@@ -428,4 +457,3 @@ loadData();
 </script>
 </body>
 </html>
- 
