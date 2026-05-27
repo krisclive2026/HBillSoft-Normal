@@ -108,6 +108,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Inter'
 .place-btn{width:100%;padding:14px;border-radius:var(--radius-sm);border:none;background:var(--accent);color:#fff;font-size:1rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:var(--transition);box-shadow:0 4px 16px rgba(255,107,53,0.35)}
 .place-btn:active{transform:scale(0.98)}
 .place-btn:disabled{opacity:0.5;cursor:not-allowed}
+.drawer-footer{flex-shrink:0;padding:14px 16px;border-top:1px solid var(--border);background:var(--bg2)}
  
 /* ── SUCCESS SCREEN ── */
 .success-screen{position:fixed;inset:0;z-index:300;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:2rem;opacity:0;pointer-events:none;transition:opacity 0.4s}
@@ -119,6 +120,15 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Inter'
 .success-screen .order-id{font-family:monospace;font-size:1.2rem;font-weight:700;color:var(--accent);padding:8px 20px;background:var(--accent-lt);border-radius:8px;margin:12px 0}
 .new-order-btn{margin-top:1.5rem;padding:12px 32px;border-radius:var(--radius-sm);border:2px solid var(--accent);background:transparent;color:var(--accent);font-size:0.95rem;font-weight:700;cursor:pointer;transition:var(--transition)}
 .new-order-btn:hover{background:var(--accent-lt)}
+
+/* ── TABLE PICKER ── */
+.table-picker-wrap{margin-bottom:14px}
+.table-picker-label{font-size:0.72rem;color:var(--text3);font-weight:600;margin-bottom:8px;display:block}
+.table-grid-picker{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+.tbl-btn{padding:8px 4px;border-radius:8px;border:1.5px solid var(--border);background:var(--bg3);color:var(--text2);font-size:0.78rem;font-weight:700;cursor:pointer;text-align:center;transition:var(--transition)}
+.tbl-btn:active{transform:scale(0.94)}
+.tbl-btn.selected{border-color:var(--accent);background:var(--accent-lt);color:var(--accent)}
+.tbl-takeaway{grid-column:1/-1;padding:9px;font-size:0.82rem;margin-top:2px}
 </style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -161,6 +171,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Inter'
     <button class="drawer-close" onclick="closeCart()">×</button>
   </div>
   <div class="drawer-body" id="drawer-body"></div>
+  <div class="drawer-footer" id="drawer-footer" style="display:none"></div>
 </div>
  
 <!-- SUCCESS SCREEN -->
@@ -178,6 +189,8 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Inter'
 // ── State ──────────────────────────────────────────────────────────────────
 let menu = [], categories = [], cart = [], settings = {};
 let currentCat = 'all';
+let selectedTable = null;   // null = takeaway, number = table number
+let tableCount = 10;
 const curr = () => settings.currency || '₹';
  
 // Cache for lazily-loaded item images: { [id]: dataURL | null }
@@ -206,6 +219,7 @@ async function loadData() {
     }
     if (sRes.ok) {
       settings = sRes;
+      tableCount = sRes.tableCount || 10;
       document.getElementById('brand-name').textContent = sRes.restaurantName || 'Restaurant';
       document.title = sRes.restaurantName || 'Order Online';
     }
@@ -349,11 +363,14 @@ function closeCart() {
  
 function renderCartDrawer() {
   const body = document.getElementById('drawer-body');
+  const footer = document.getElementById('drawer-footer');
   if (!cart.length) {
     body.innerHTML = `
       <div class="empty" style="padding:2rem 0">
         <div class="e-icon">🛒</div><p>Cart is empty</p>
       </div>`;
+    footer.style.display = 'none';
+    footer.innerHTML = '';
     return;
   }
  
@@ -384,17 +401,23 @@ function renderCartDrawer() {
         <span>Total</span>
         <span>${curr()}${subtotal.toFixed(2)}</span>
       </div>
-    </div>
-    <div class="form-section">
+    </div>`;
+
+  footer.style.display = 'block';
+  footer.innerHTML = `
+    <div class="form-section" style="padding:0;border-top:none">
       <h3>Your Details</h3>
-      <div class="form-row">
-        <div class="form-field">
-          <label>Your Name</label>
-          <input id="cust-name" type="text" placeholder="e.g. Rahul" maxlength="50">
-        </div>
-        <div class="form-field">
-          <label>Table No.</label>
-          <input id="cust-table" type="text" placeholder="e.g. 4" maxlength="10">
+      <div class="form-field" style="margin-bottom:10px">
+        <label>Your Name</label>
+        <input id="cust-name" type="text" placeholder="e.g. Rahul" maxlength="50">
+      </div>
+      <div class="table-picker-wrap">
+        <span class="table-picker-label">Select Table</span>
+        <div class="table-grid-picker" id="table-grid-picker">
+          ${Array.from({length: tableCount}, (_, i) => i + 1).map(n => `
+            <button class="tbl-btn${selectedTable === n ? ' selected' : ''}" onclick="pickTable(${n})">T${n}</button>
+          `).join('')}
+          <button class="tbl-btn tbl-takeaway${selectedTable === 0 ? ' selected' : ''}" onclick="pickTable(0)">🛍️ Takeaway</button>
         </div>
       </div>
       <div class="form-field" style="margin-bottom:14px">
@@ -405,19 +428,32 @@ function renderCartDrawer() {
         ✅ Place Order · ${curr()}${subtotal.toFixed(2)}
       </button>
     </div>`;
+
 }
  
+// ── Table Picker ────────────────────────────────────────────────────────────
+function pickTable(n) {
+  selectedTable = n;
+  // Update button highlight without re-rendering full footer
+  document.querySelectorAll('.tbl-btn').forEach(btn => btn.classList.remove('selected'));
+  event.currentTarget.classList.add('selected');
+}
+
 // ── Place Order ─────────────────────────────────────────────────────────────
 async function placeOrder() {
   if (!cart.length) return;
+  if (selectedTable === null) {
+    alert('Please select a table or Takeaway before placing your order.');
+    return;
+  }
   const btn = document.getElementById('place-btn');
   btn.disabled = true;
   btn.textContent = '⏳ Sending…';
   const customer = (document.getElementById('cust-name')?.value || '').trim();
-  const table_no = (document.getElementById('cust-table')?.value || '').trim();
+  const table_no = selectedTable === 0 ? 'takeaway' : String(selectedTable);
   const note     = (document.getElementById('cust-note')?.value || '').trim();
   const items    = cart.map(i => ({ id: i.id, name: i.name, price: i.price, qty: i.qty }));
- 
+
   try {
     const res = await fetch('/api/order', {
       method: 'POST',
@@ -447,6 +483,7 @@ function showSuccess(orderId) {
  
 function resetApp() {
   cart = [];
+  selectedTable = null;
   updateCartBadge();
   renderMenu();
   document.getElementById('success-screen').classList.remove('show');
