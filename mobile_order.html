@@ -23,7 +23,7 @@
 }
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;overflow-x:hidden}
-
+ 
 /* ── TOP BAR ── */
 .top-bar{position:sticky;top:0;z-index:100;background:var(--bg2);border-bottom:1px solid var(--border);padding:12px 16px;display:flex;align-items:center;justify-content:space-between;backdrop-filter:blur(20px)}
 .top-bar .brand{font-size:1.1rem;font-weight:900;background:linear-gradient(90deg,#ff6b35,#ff8555);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
@@ -31,23 +31,23 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Inter'
 .cart-pill{display:flex;align-items:center;gap:6px;background:var(--accent);color:#fff;border:none;border-radius:24px;padding:8px 14px;font-size:0.82rem;font-weight:700;cursor:pointer;transition:var(--transition)}
 .cart-pill:active{transform:scale(0.96)}
 .cart-pill .count{background:rgba(255,255,255,0.25);border-radius:12px;padding:1px 7px;font-size:0.72rem}
-
+ 
 /* ── CATEGORIES ── */
 .cat-row{display:flex;gap:8px;overflow-x:auto;padding:12px 16px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
 .cat-row::-webkit-scrollbar{display:none}
 .cat-chip{flex-shrink:0;display:flex;align-items:center;gap:5px;padding:7px 14px;border-radius:24px;border:1.5px solid var(--border);background:var(--card);color:var(--text2);font-size:0.8rem;font-weight:600;cursor:pointer;transition:var(--transition);white-space:nowrap}
 .cat-chip.active{border-color:var(--accent);background:var(--accent-lt);color:var(--accent)}
-
+ 
 /* ── SEARCH ── */
 .search-wrap{padding:0 16px 12px}
 .search-wrap input{width:100%;padding:10px 14px;border-radius:var(--radius-sm);border:1.5px solid var(--border);background:var(--bg3);color:var(--text);font-size:0.9rem;outline:none;transition:var(--transition)}
 .search-wrap input:focus{border-color:var(--accent)}
 .search-wrap input::placeholder{color:var(--text3)}
-
+ 
 /* ── MENU GRID ── */
 .menu-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;padding:0 12px 120px}
 @media(min-width:500px){.menu-grid{grid-template-columns:repeat(3,1fr)}}
-
+ 
 .food-card{background:var(--card);border:2px solid var(--border);border-radius:var(--radius);overflow:hidden;transition:var(--transition)}
 .food-card.in-cart{border-color:var(--accent)}
 .food-card:active{transform:scale(0.97)}
@@ -61,13 +61,13 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Inter'
 .qty-btn.minus{color:#ff3366;border-color:rgba(255,51,102,0.3)}
 .qty-btn.plus{color:var(--accent);border-color:rgba(255,107,53,0.3)}
 .qty-num{font-size:0.9rem;font-weight:800;min-width:22px;text-align:center}
-
+ 
 .section-title{padding:6px 16px 4px;font-size:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--text3)}
-
+ 
 /* ── EMPTY STATE ── */
 .empty{grid-column:1/-1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:3rem 1rem;color:var(--text3);text-align:center;gap:8px}
 .empty .e-icon{font-size:3rem;opacity:0.5}
-
+ 
 /* ── CART DRAWER ── */
 .drawer-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(4px);z-index:200;opacity:0;pointer-events:none;transition:opacity 0.3s}
 .drawer-overlay.open{opacity:1;pointer-events:auto}
@@ -78,7 +78,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Inter'
 .drawer-header h2{font-size:1rem;font-weight:700}
 .drawer-close{background:none;border:none;color:var(--text2);font-size:1.4rem;cursor:pointer;padding:2px 6px}
 .drawer-body{overflow-y:auto;flex:1;padding:10px 16px}
-
+ 
 .cart-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)}
 .cart-row:last-child{border-bottom:none}
 .cart-thumb{width:44px;height:44px;border-radius:8px;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:1.4rem;flex-shrink:0;overflow:hidden}
@@ -91,11 +91,11 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Inter'
 .cadj-btn.minus{color:#ff3366}
 .cadj-btn.plus{color:var(--accent)}
 .cadj-num{font-size:0.88rem;font-weight:800;min-width:20px;text-align:center}
-
+ 
 .total-bar{padding:12px 16px;border-top:1px solid var(--border)}
 .total-row{display:flex;justify-content:space-between;font-size:0.88rem;color:var(--text2);margin-bottom:4px}
 .total-row.grand{font-size:1rem;font-weight:700;color:var(--text)}
-
+ 
 /* ── CUSTOMER FORM ── */
 .form-section{padding:14px 16px;border-top:1px solid var(--border)}
 .form-section h3{font-size:0.82rem;font-weight:600;color:var(--text2);margin-bottom:10px;text-transform:uppercase;letter-spacing:0.06em}
@@ -104,11 +104,11 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Inter'
 .form-field label{font-size:0.72rem;color:var(--text3);font-weight:600}
 .form-field input,.form-field textarea{background:var(--bg3);border:1.5px solid var(--border);border-radius:8px;color:var(--text);font-size:0.88rem;padding:8px 10px;outline:none;font-family:inherit;resize:none;transition:border-color 0.2s}
 .form-field input:focus,.form-field textarea:focus{border-color:var(--accent)}
-
+ 
 .place-btn{width:100%;padding:14px;border-radius:var(--radius-sm);border:none;background:var(--accent);color:#fff;font-size:1rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:var(--transition);box-shadow:0 4px 16px rgba(255,107,53,0.35)}
 .place-btn:active{transform:scale(0.98)}
 .place-btn:disabled{opacity:0.5;cursor:not-allowed}
-
+ 
 /* ── SUCCESS SCREEN ── */
 .success-screen{position:fixed;inset:0;z-index:300;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:2rem;opacity:0;pointer-events:none;transition:opacity 0.4s}
 .success-screen.show{opacity:1;pointer-events:auto}
@@ -124,7 +124,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Inter'
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 </head>
 <body>
-
+ 
 <!-- TOP BAR -->
 <div class="top-bar">
   <div>
@@ -135,24 +135,24 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Inter'
     🛒 Cart <span class="count" id="cart-count">0</span>
   </button>
 </div>
-
+ 
 <!-- CATEGORIES -->
 <div class="cat-row" id="cat-row"></div>
-
+ 
 <!-- SEARCH -->
 <div class="search-wrap">
   <input type="search" id="search-input" placeholder="🔍 Search menu…" oninput="renderMenu()">
 </div>
-
+ 
 <!-- SECTION TITLE -->
 <div class="section-title" id="section-title">All Items</div>
-
+ 
 <!-- MENU GRID -->
 <div class="menu-grid" id="menu-grid"></div>
-
+ 
 <!-- CART DRAWER OVERLAY -->
 <div class="drawer-overlay" id="drawer-overlay" onclick="closeCart()"></div>
-
+ 
 <!-- CART DRAWER -->
 <div class="drawer" id="cart-drawer">
   <div class="drawer-handle"></div>
@@ -162,7 +162,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Inter'
   </div>
   <div class="drawer-body" id="drawer-body"></div>
 </div>
-
+ 
 <!-- SUCCESS SCREEN -->
 <div class="success-screen" id="success-screen">
   <div class="success-icon">✅</div>
@@ -173,21 +173,34 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Inter'
   <p style="color:var(--text3);font-size:0.82rem;">Please wait, staff will confirm shortly.</p>
   <button class="new-order-btn" onclick="resetApp()">+ New Order</button>
 </div>
-
+ 
 <script>
 // ── State ──────────────────────────────────────────────────────────────────
 let menu = [], categories = [], cart = [], settings = {};
 let currentCat = 'all';
 const curr = () => settings.currency || '₹';
-
+ 
 // ── Fetch data ─────────────────────────────────────────────────────────────
 async function loadData() {
+  const grid = document.getElementById('menu-grid');
+  grid.innerHTML = '<div class="empty"><div class="e-icon">&#x23F3;</div><p>Loading menu...</p></div>';
   try {
-    const [mRes, sRes] = await Promise.all([
-      fetch('/api/menu').then(r => r.json()),
-      fetch('/api/settings').then(r => r.json())
+    const [menuHttpRes, settingsHttpRes] = await Promise.all([
+      fetch('/api/menu'),
+      fetch('/api/settings')
     ]);
-    if (mRes.ok) { menu = mRes.menu; categories = mRes.categories; }
+    if (!menuHttpRes.ok) throw new Error('Menu request failed: HTTP ' + menuHttpRes.status);
+    if (!settingsHttpRes.ok) throw new Error('Settings request failed: HTTP ' + settingsHttpRes.status);
+ 
+    const mRes = await menuHttpRes.json();
+    const sRes = await settingsHttpRes.json();
+ 
+    if (mRes.ok && Array.isArray(mRes.menu)) {
+      menu = mRes.menu;
+      categories = Array.isArray(mRes.categories) ? mRes.categories : [];
+    } else {
+      throw new Error(mRes.error || 'Menu data missing from server response');
+    }
     if (sRes.ok) {
       settings = sRes;
       document.getElementById('brand-name').textContent = sRes.restaurantName || 'Restaurant';
@@ -197,10 +210,12 @@ async function loadData() {
     renderMenu();
   } catch (e) {
     console.error('Load failed:', e);
-    document.getElementById('menu-grid').innerHTML = '<div class="empty"><div class="e-icon">⚠️</div><p>Could not load menu. Check connection.</p></div>';
+    grid.innerHTML = '<div class="empty"><div class="e-icon">&#x26A0;&#xFE0F;</div><p>Could not load menu.</p>'
+      + '<p style="font-size:0.75rem;margin-top:4px;color:var(--text3)">' + e.message + '</p>'
+      + '<button onclick="loadData()" style="margin-top:12px;padding:8px 20px;border-radius:20px;border:1.5px solid var(--accent);background:transparent;color:var(--accent);font-weight:700;cursor:pointer;font-size:0.85rem">&#x1F504; Retry</button></div>';
   }
 }
-
+ 
 // ── Categories ─────────────────────────────────────────────────────────────
 function renderCategories() {
   const row = document.getElementById('cat-row');
@@ -210,7 +225,7 @@ function renderCategories() {
       ${c.icon} ${c.name}
     </div>`).join('');
 }
-
+ 
 function selectCat(id) {
   currentCat = id;
   const chips = document.querySelectorAll('.cat-chip');
@@ -220,7 +235,7 @@ function selectCat(id) {
   document.getElementById('section-title').textContent = name;
   renderMenu();
 }
-
+ 
 // ── Menu ───────────────────────────────────────────────────────────────────
 function renderMenu() {
   const grid  = document.getElementById('menu-grid');
@@ -228,9 +243,13 @@ function renderMenu() {
   let items   = menu;
   if (currentCat !== 'all') items = items.filter(i => i.category === currentCat);
   if (query) items = items.filter(i => i.name.toLowerCase().includes(query));
-
+ 
   if (!items.length) {
-    grid.innerHTML = '<div class="empty"><div class="e-icon">🔍</div><p>No items found</p></div>';
+    const hasQuery = document.getElementById('search-input').value.trim();
+    const icon = hasQuery ? '&#x1F50D;' : (menu.length === 0 ? '&#x1F37D;&#xFE0F;' : '&#x1F50D;');
+    const msg  = hasQuery ? 'No items match your search'
+                          : (menu.length === 0 ? 'Menu is empty' : 'No items in this category');
+    grid.innerHTML = '<div class="empty"><div class="e-icon">' + icon + '</div><p>' + msg + '</p></div>';
     return;
   }
   grid.innerHTML = items.map(item => {
@@ -253,7 +272,7 @@ function renderMenu() {
     </div>`;
   }).join('');
 }
-
+ 
 function addItem(id) {
   const item = menu.find(m => m.id === id);
   if (!item) return;
@@ -264,7 +283,7 @@ function addItem(id) {
   renderMenu();
   updateCartBadge();
 }
-
+ 
 function adj(id, delta) {
   const item = menu.find(m => m.id === id);
   if (!item) return;
@@ -280,12 +299,12 @@ function adj(id, delta) {
   updateCartBadge();
   if (document.getElementById('cart-drawer').classList.contains('open')) renderCartDrawer();
 }
-
+ 
 function updateCartBadge() {
   const total = cart.reduce((s, i) => s + i.qty, 0);
   document.getElementById('cart-count').textContent = total;
 }
-
+ 
 // ── Cart Drawer ─────────────────────────────────────────────────────────────
 function openCart() {
   renderCartDrawer();
@@ -298,7 +317,7 @@ function closeCart() {
   document.getElementById('drawer-overlay').classList.remove('open');
   document.body.style.overflow = '';
 }
-
+ 
 function renderCartDrawer() {
   const body = document.getElementById('drawer-body');
   if (!cart.length) {
@@ -308,7 +327,7 @@ function renderCartDrawer() {
       </div>`;
     return;
   }
-
+ 
   const subtotal = cart.reduce((s, i) => s + i.price * i.qty, 0);
   const items_html = cart.map(item => {
     const thumb = item.imageData
@@ -328,7 +347,7 @@ function renderCartDrawer() {
       </div>
     </div>`;
   }).join('');
-
+ 
   body.innerHTML = `
     ${items_html}
     <div class="total-bar">
@@ -358,7 +377,7 @@ function renderCartDrawer() {
       </button>
     </div>`;
 }
-
+ 
 // ── Place Order ─────────────────────────────────────────────────────────────
 async function placeOrder() {
   if (!cart.length) return;
@@ -369,7 +388,7 @@ async function placeOrder() {
   const table_no = (document.getElementById('cust-table')?.value || '').trim();
   const note     = (document.getElementById('cust-note')?.value || '').trim();
   const items    = cart.map(i => ({ id: i.id, name: i.name, price: i.price, qty: i.qty }));
-
+ 
   try {
     const res = await fetch('/api/order', {
       method: 'POST',
@@ -390,22 +409,23 @@ async function placeOrder() {
     btn.textContent = '✅ Place Order';
   }
 }
-
+ 
 function showSuccess(orderId) {
   closeCart();
   document.getElementById('success-order-id').textContent = '#' + orderId;
   document.getElementById('success-screen').classList.add('show');
 }
-
+ 
 function resetApp() {
   cart = [];
   updateCartBadge();
   renderMenu();
   document.getElementById('success-screen').classList.remove('show');
 }
-
+ 
 // ── Boot ────────────────────────────────────────────────────────────────────
 loadData();
 </script>
 </body>
 </html>
+ 
