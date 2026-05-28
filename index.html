@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>RestoBill — Mobile Order</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0d0d0d; --surface: #161616; --card: #1e1e1e; --border: #2a2a2a;
+    --accent: #FF6B35; --accent2: #FFA500; --text: #f0f0f0; --muted: #666;
+    --green: #4CAF50; --red: #e53935; --radius: 14px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif;
+    min-height: 100vh; padding-bottom: 80px;
+  }
+  header {
+    background: linear-gradient(135deg, #1a0800 0%, #0d0d0d 100%);
+    padding: 20px 20px 16px; border-bottom: 1px solid var(--border);
+    position: sticky; top: 0; z-index: 100; backdrop-filter: blur(10px);
+  }
+  header h1 { font-family: 'Playfair Display', serif; font-size: 22px; color: var(--accent); }
+  header p { font-size: 12px; color: var(--muted); }
+  .refresh-btn {
+    position: absolute; right: 16px; top: 16px;
+    background: none; border: 1px solid var(--accent); color: var(--accent);
+    border-radius: 8px; padding: 6px 12px; font-size: 12px; cursor: pointer;
+  }
+  .container { max-width: 480px; margin: 0 auto; padding: 16px; }
+  .table-bar {
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 16px; margin-bottom: 16px; display: flex; flex-direction: column; gap: 10px;
+  }
+  .table-bar label { font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; }
+  .table-bar input {
+    width: 100%; background: var(--card); border: 1px solid var(--border); border-radius: 8px;
+    color: var(--text); font-family: inherit; font-size: 16px; padding: 12px 14px; outline: none;
+  }
+  .cat-tabs { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; margin-bottom: 14px; }
+  .cat-tab {
+    flex-shrink: 0; background: var(--surface); border: 1px solid var(--border);
+    border-radius: 20px; color: var(--muted); font-size: 13px; padding: 7px 16px; cursor: pointer;
+  }
+  .cat-tab.active { background: var(--accent); color: #fff; }
+  .search-wrap { position: relative; margin-bottom: 14px; }
+  .search-wrap input {
+    width: 100%; background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+    color: var(--text); padding: 11px 14px 11px 38px; outline: none;
+  }
+  .search-wrap .icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--muted); }
+  .menu-grid { display: flex; flex-direction: column; gap: 8px; }
+  .menu-item {
+    background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 13px 14px; display: flex; align-items: center; gap: 12px; cursor: pointer;
+  }
+  .item-info { flex: 1; }
+  .item-name { font-size: 15px; font-weight: 600; }
+  .item-price { font-size: 15px; font-weight: 700; color: var(--accent2); }
+  .qty-ctrl { display: flex; align-items: center; background: var(--surface); border-radius: 8px; overflow: hidden; }
+  .qty-ctrl button { background: none; border: none; color: var(--accent); width: 36px; height: 36px; cursor: pointer; font-size: 20px; }
+  .qty-ctrl span { min-width: 30px; text-align: center; font-size: 15px; font-weight: 600; }
+  .cart-bar {
+    position: fixed; bottom: 0; left: 0; right: 0; background: var(--accent);
+    transform: translateY(100%); transition: transform 0.3s; z-index: 200; max-width: 480px; margin: 0 auto;
+  }
+  .cart-bar.visible { transform: translateY(0); }
+  .cart-bar-inner { display: flex; align-items: center; padding: 14px 20px; gap: 12px; }
+  .cart-count { background: rgba(0,0,0,0.25); border-radius: 20px; padding: 4px 10px; font-size: 13px; }
+  .cart-label { flex: 1; font-weight: 700; color: #fff; }
+  .sheet-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 300; }
+  .sheet-overlay.open { display: block; }
+  .sheet {
+    position: fixed; bottom: 0; left: 0; right: 0; background: var(--surface);
+    border-radius: 20px 20px 0 0; max-height: 80vh; overflow-y: auto; z-index: 400;
+    transform: translateY(100%); transition: transform 0.35s; max-width: 480px; margin: 0 auto;
+  }
+  .sheet.open { transform: translateY(0); }
+  .sheet-title { font-family: 'Playfair Display', serif; font-size: 20px; color: var(--accent); padding: 16px 20px; border-bottom: 1px solid var(--border); }
+  .cart-item { display: flex; align-items: center; gap: 12px; padding: 12px 20px; border-bottom: 1px solid var(--border); }
+  .btn-place {
+    width: 100%; background: var(--accent); color: #fff; border: none; border-radius: 12px;
+    font-size: 16px; font-weight: 700; padding: 15px; cursor: pointer;
+  }
+  .toast {
+    position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
+    background: var(--green); color: #fff; border-radius: 10px; padding: 10px 20px;
+    opacity: 0; transition: 0.3s; z-index: 999;
+  }
+  .toast.show { opacity: 1; }
+  .toast.error { background: var(--red); }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>&#127374; RestoBill</h1>
+  <p>Waiter Order Terminal</p>
+  <button class="refresh-btn" onclick="loadMenu()">&#8635; Refresh</button>
+</header>
+
+<div class="container">
+  <div class="table-bar">
+    <div><label>Table Number</label><input type="text" id="tableInput" placeholder="e.g. T01" style="text-transform:uppercase"></div>
+    <div><label>Waiter Name</label><input type="text" id="waiterInput" placeholder="Optional"></div>
+  </div>
+  <div class="cat-tabs" id="catTabs"><button class="cat-tab active" data-cat="All">All</button></div>
+  <div class="search-wrap"><input type="text" id="searchInput" placeholder="Search menu..." oninput="renderMenu()"></div>
+  <div class="menu-grid" id="menuGrid"><p style="text-align:center;padding:20px;color:var(--muted)">Connecting to server...</p></div>
+</div>
+
+<div class="cart-bar" id="cartBar" onclick="openSheet()"><div class="cart-bar-inner"><span class="cart-count" id="cartCount">0</span><span class="cart-label">View Order</span><span class="cart-total" id="cartTotal"></span></div></div>
+<div class="sheet-overlay" id="sheetOverlay" onclick="closeSheet()"></div>
+<div class="sheet" id="cartSheet"><div class="sheet-title">Your Order</div><div id="sheetItems"></div><div style="padding:20px"><button class="btn-place" id="placeBtn" onclick="placeOrder()">Place Order</button></div></div>
+<div class="toast" id="toast"></div>
+
+<script>
+// ── API Detection ────────────────────────────────────────
+const urlParams = new URLSearchParams(window.location.search);
+let API_BASE = urlParams.get('api') || ''; 
+if (!API_BASE) {
+    // Fallback: detect if running on same IP as browser address bar
+    if (window.location.port === '5000' || window.location.hostname !== 'localhost') {
+        API_BASE = window.location.origin;
+    }
+}
+if (API_BASE && !API_BASE.endsWith('/')) API_BASE += '/';
+
+let MENU = [];
+let CURRENCY = 'Rs.';
+let cart = {};
+let activeCat = 'All';
+
+function loadMenu() {
+    fetch(API_BASE + 'menu')
+        .then(r => r.json())
+        .then(data => {
+            MENU = data.items || [];
+            CURRENCY = data.currency || 'Rs.';
+            buildCatTabs();
+            renderMenu();
+        })
+        .catch(err => {
+            showToast('Cannot reach server', true);
+            console.error(err);
+        });
+}
+
+function buildCatTabs() {
+    const cats = [...new Set(MENU.map(m => m.category).filter(Boolean))].sort();
+    let html = '<button class="cat-tab active" data-cat="All">All</button>';
+    cats.forEach(c => html += `<button class="cat-tab" data-cat="${c}">${c}</button>`);
+    const container = document.getElementById('catTabs');
+    container.innerHTML = html;
+    container.onclick = e => {
+        const btn = e.target.closest('.cat-tab');
+        if (btn) filterCat(btn.dataset.cat);
+    };
+}
+
+function renderMenu() {
+    const q = document.getElementById('searchInput').value.toLowerCase();
+    const grid = document.getElementById('menuGrid');
+    const items = MENU.filter(m => (activeCat === 'All' || m.category === activeCat) && m.name.toLowerCase().includes(q));
+    
+    grid.innerHTML = items.map(m => {
+        const qty = cart[m.name]?.qty || 0;
+        return `
+            <div class="menu-item">
+                <div class="item-info">
+                    <div class="item-name">${m.name}</div>
+                    <div style="font-size:11px;color:var(--muted)">${m.category || ''}</div>
+                </div>
+                <div class="item-price">${CURRENCY}${m.price}</div>
+                <div class="qty-ctrl">
+                    ${qty > 0 ? `<button onclick="handleQty('${m.name}', ${m.price}, -1)">&minus;</button><span>${qty}</span>` : ''}
+                    <button onclick="handleQty('${m.name}', ${m.price}, 1)">+</button>
+                </div>
+            </div>
+        `;
+    }).join('') || '<p style="text-align:center;color:var(--muted)">No items found</p>';
+}
+
+function handleQty(name, price, delta) {
+    if (!cart[name]) cart[name] = { qty: 0, price: price };
+    cart[name].qty = Math.max(0, cart[name].qty + delta);
+    if (cart[name].qty === 0) delete cart[name];
+    renderMenu();
+    updateCartBar();
+}
+
+function filterCat(cat) {
+    activeCat = cat;
+    document.querySelectorAll('.cat-tab').forEach(t => t.classList.toggle('active', t.dataset.cat === cat));
+    renderMenu();
+}
+
+function updateCartBar() {
+    const items = Object.values(cart);
+    const count = items.reduce((a, b) => a + b.qty, 0);
+    const total = items.reduce((a, b) => a + (b.qty * b.price), 0);
+    document.getElementById('cartCount').textContent = count;
+    document.getElementById('cartTotal').textContent = CURRENCY + total;
+    document.getElementById('cartBar').classList.toggle('visible', count > 0);
+}
+
+function openSheet() {
+    const items = Object.entries(cart);
+    document.getElementById('sheetItems').innerHTML = items.map(([name, v]) => `
+        <div class="cart-item">
+            <div style="flex:1"><b>${name}</b><br><small>${CURRENCY}${v.price} x ${v.qty}</small></div>
+            <div style="font-weight:700">${CURRENCY}${v.price * v.qty}</div>
+        </div>
+    `).join('');
+    document.getElementById('sheetOverlay').classList.add('open');
+    document.getElementById('cartSheet').classList.add('open');
+}
+
+function closeSheet() {
+    document.getElementById('sheetOverlay').classList.remove('open');
+    document.getElementById('cartSheet').classList.remove('open');
+}
+
+function placeOrder() {
+    const table = document.getElementById('tableInput').value.trim();
+    if (!table) return showToast('Enter table number', true);
+    
+    const order = {
+        table, waiter: document.getElementById('waiterInput').value,
+        items: Object.entries(cart).map(([name, v]) => ({ name, qty: v.qty, price: v.price })),
+        total: Object.values(cart).reduce((a, b) => a + (b.qty * b.price), 0)
+    };
+
+    fetch(API_BASE + 'order', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(order)
+    }).then(r => r.json()).then(d => {
+        if (d.ok) { cart = {}; closeSheet(); renderMenu(); updateCartBar(); showToast('Order Sent!'); }
+    }).catch(() => showToast('Error sending order', true));
+}
+
+function showToast(m, e) {
+    const t = document.getElementById('toast');
+    t.textContent = m; t.className = 'toast' + (e ? ' error' : '') + ' show';
+    setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+loadMenu();
+</script>
+</body>
+</html>
