@@ -10,7 +10,7 @@ Run git clone https://github.com/krisclive2026/HBillSoft-Normal.git
 
 
 
-Run test12.py
+Run main.py
 
 
 
